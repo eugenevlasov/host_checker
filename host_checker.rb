@@ -1,4 +1,4 @@
-# require 'lib/host_checker'
+require './lib/core'
 require 'optparse'
 
 # host_checker = HostChecker.new
@@ -8,9 +8,9 @@ OptionParser.new do |opts|
   opts.banner = "Usage: ruby host_checker.rb [options]"
 
   opts.on("-c", "--config", "Config file .yml") do |v|
-    options[:verbose] = v
+    options[:config_file] = v
   end
 end.parse!
 
-p options
-p ARGV
+host_checker = HostChecker::Core.new(options)
+host_checker.run
