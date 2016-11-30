@@ -1,5 +1,6 @@
 require_relative 'utils'
 require_relative 'config'
+require_relative 'statistic'
 require 'rufus-scheduler'
 require 'httpclient'
 
@@ -10,6 +11,7 @@ module HostChecker
     attr_accessor :threads
     attr_reader :statistics
     attr_accessor :cron_jobs
+
     def initialize(args={})
       @config = Config.new(args)
       @http_clients = {}
@@ -24,11 +26,17 @@ module HostChecker
       hosts_to_check.each do |host|
         threads << Thread.new do
           scheduler.every "#{host['period']}s" do |job|
+            statistics[host['url']] ||= Statistic.new
+            job.next_time = unless check_host(host)
+                              statistics[host['url']].down
+                              Time.now + 1
+                            else
+                              statistics[host['url']].up
+                              Time.now + host['period'].to_i * 60
 
-            check_host host
-            job.next_time = Time.now + 15
+                            end
+            puts statistics
           end
-          puts cron_jobs
           scheduler.join
         end
       end
@@ -45,8 +53,14 @@ module HostChecker
     end
 
     def check_host(host)
+
       answer = client(host).get(host["url"])
       puts "#{Time.now} #{host["url"]} status: #{answer.status}"
+      return false unless (200..399).to_a.include?(answer.status)
+      true
+    rescue SocketError => e
+      puts "#{Time.now} #{host["url"]} #{e.message}"
+      false
     end
   end
 end
