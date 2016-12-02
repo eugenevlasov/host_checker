@@ -12,17 +12,17 @@ module HostChecker
       end
       @host = host
     end
-    def host_down(up_at, down_at, attempt_count)
+    def notificate_down(up_at, down_at, attempt_count)
+      super(up_at, down_at, attempt_count)
       @mailer.subject "#{@host} is down"
-      message = "#{@host} up at #{up_at} down at #{down_at}"
-      message << "check attempt count: #{attempt_count}" if attempt_count != 0
-      @mailer.body message
+
+      @mailer.body @message
       @mailer.deliver!
     end
-    def host_up(up_at, down_at, downtime)
+    def notificate_up(up_at, down_at, downtime)
+      super(up_at, down_at, attempt_count)
       @mailer.subject "#{@host} is up"
-      message = "#{@host} up at #{up_at} down at #{down_at} downtime: #{downtime}"
-      @mailer.body message
+      @mailer.body @message
       @mailer.deliver!
     end
   end

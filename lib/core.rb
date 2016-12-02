@@ -34,11 +34,12 @@ module HostChecker
             mailer = mailers[host['url']] = Mailer.new(host['url'], host['notification']['email'])
             job.next_time = unless check_host(host)
                               statistic.down
-
+                              notificate_about_down(host, statistic)
                               puts statistic.to_s
                               Time.now + 1
                             else
                               statistic.up
+                              notificate_about_up(host, statistic)
                               Time.now + host['period'].to_i * 60
 
                             end
@@ -59,12 +60,12 @@ module HostChecker
     end
     def notificate_about_down(host, statistic)
       if [1, 10, 50, 100].include?(statistic.attempt_count) && host['notification']['email']
-        mailer.host_down(statistic.up_at, statistic.down_at, statistic.attempt_count)
+        mailers[host['url']].notificate_down(statistic.up_at, statistic.down_at, statistic.attempt_count)
       end
     end
     def notificate_about_up(host, statistic)
       if host['notification']['email']
-        mailer.host_up(statistic.up_at, statistic.down_at, statistic.attempt_count)
+        mailers[host['url']].notificate_up(statistic.up_at, statistic.down_at, statistic.attempt_count)
       end
     end
     def check_host(host)
