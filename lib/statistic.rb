@@ -9,9 +9,10 @@ module HostChecker
     end
     def up(time=Time.now)
       @attempt_count = 0
+      down_at_ = @down_at
       @down_at = nil
       @up_at ||= time
-      nil
+      return down_at_.nil?
     end
     def down(time=Time.now)
       @up_at = nil

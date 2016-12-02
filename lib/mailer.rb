@@ -2,9 +2,6 @@ require_relative 'base_notificator'
 require 'mail'
 module HostChecker
   class Mailer < HostChecker::BaseNotificator
-    Mail.defaults do
-      delivery_method :smtp, address: "localhost", port: 1025
-    end
     def initialize(host, email)
       @mailer = Mail.new do
         from    'alarm@hostchecker.local'
@@ -20,7 +17,7 @@ module HostChecker
       @mailer.deliver!
     end
     def notificate_up(up_at, down_at, downtime)
-      super(up_at, down_at, attempt_count)
+      super(up_at, down_at, downtime)
       @mailer.subject "#{@host} is up"
       @mailer.body @message
       @mailer.deliver!

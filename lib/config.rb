@@ -8,8 +8,8 @@ module HostChecker
     attr_reader :params
     attr_reader :hosts
     attr_reader :config_file
+
     def initialize(args={})
-      puts Dir.pwd
       @hosts = []
       @config_file = args.fetch(:config_file, './config/hosts.yml')
       begin
