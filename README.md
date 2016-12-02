@@ -5,5 +5,5 @@
 Струтура файлов конфигурации понятно из примера
 
 #Запуск
-cd ../host_checker
-ruby host_checker.rb
+## cd ../host_checker
+## ruby host_checker.rb
