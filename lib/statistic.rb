@@ -26,7 +26,7 @@ module HostChecker
     end
     def to_s
       if is_down?
-        "down at:#{down_at}; attempt count: #{attempt_count} down time #{down_time}"
+        "down at:#{down_at}; attempt count: #{attempt_count} downtime #{down_time}"
       else
         "is up"
         end

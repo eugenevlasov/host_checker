@@ -1,8 +1,10 @@
 require_relative 'utils'
 require_relative 'config'
 require_relative 'statistic'
+require_relative 'mailer'
 require 'rufus-scheduler'
 require 'httpclient'
+
 
 module HostChecker
   class Core
@@ -11,6 +13,7 @@ module HostChecker
     attr_accessor :threads
     attr_reader :statistics
     attr_accessor :cron_jobs
+    attr_reader :mailers
 
     def initialize(args={})
       @config = Config.new(args)
@@ -18,6 +21,7 @@ module HostChecker
       @threads = []
       @statistics = {}
       @cron_jobs = {}
+      @mailers = {}
     end
 
     def run
@@ -26,16 +30,18 @@ module HostChecker
       hosts_to_check.each do |host|
         threads << Thread.new do
           scheduler.every "#{host['period']}s" do |job|
-            statistics[host['url']] ||= Statistic.new
+            statistic = statistics[host['url']] ||= Statistic.new
+            mailer = mailers[host['url']] = Mailer.new(host['url'], host['notification']['email'])
             job.next_time = unless check_host(host)
-                              statistics[host['url']].down
+                              statistic.down
+
+                              puts statistic.to_s
                               Time.now + 1
                             else
-                              statistics[host['url']].up
+                              statistic.up
                               Time.now + host['period'].to_i * 60
 
                             end
-            puts statistics
           end
           scheduler.join
         end
@@ -51,7 +57,16 @@ module HostChecker
     def hosts_to_check
       config.hosts_to_check
     end
-
+    def notificate_about_down(host, statistic)
+      if [1, 10, 50, 100].include?(statistic.attempt_count) && host['notification']['email']
+        mailer.host_down(statistic.up_at, statistic.down_at, statistic.attempt_count)
+      end
+    end
+    def notificate_about_up(host, statistic)
+      if host['notification']['email']
+        mailer.host_up(statistic.up_at, statistic.down_at, statistic.attempt_count)
+      end
+    end
     def check_host(host)
 
       answer = client(host).get(host["url"])

@@ -1,0 +1,3 @@
+hostchecker:
+  smpt_url: localhost
+  smpt_port: 1025
