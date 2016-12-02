@@ -38,7 +38,7 @@ module HostChecker
       scheduler = Rufus::Scheduler.new
       hosts_to_check.each do |host|
         threads << Thread.new do
-          scheduler.every "#{host['period']}s" do |job|
+          scheduler.every "#{host['period']}m" do |job|
             statistic = statistics[host['url']] ||= Statistic.new
             mailers[host['url']] ||= Mailer.new(host['url'], host['notification']['email'])
             sms_senders[host['url']] ||= SmsSender.new(host['url'], host['notification']['phone'])
@@ -47,8 +47,9 @@ module HostChecker
                               notificate_about_down(host, statistic)
                               Time.now + 1 * 60
                             else
-                              statistic.up
-                              notificate_about_up(host, statistic)
+                              if statistic.up
+                                notificate_about_up(host, statistic)
+                              end
                               Time.now + host['period'].to_i * 60
                             end
           end
@@ -77,12 +78,11 @@ module HostChecker
       end
     end
     def notificate_about_up(host, statistic)
-      return unless statistic.is_down?
       if host['notification']['email']
-        mailers[host['url']].notificate_up(statistic.up_at, statistic.down_at, statistic.attempt_count)
+        mailers[host['url']].notificate_up(statistic.up_at, statistic.down_at, statistic.down_time)
       end
       if host['notification']['phone']
-        sms_senders[host['url']].notificate_down(statistic.up_at, statistic.down_at, statistic.attempt_count)
+        sms_senders[host['url']].notificate_down(statistic.up_at, statistic.down_at, statistic.down_time)
       end
     end
     def check_host(host)
@@ -92,6 +92,9 @@ module HostChecker
       return false unless (200..399).to_a.include?(answer.status)
       true
     rescue SocketError => e
+      puts "#{Time.now} #{host["url"]} #{e.message}"
+      false
+    rescue => e
       puts "#{Time.now} #{host["url"]} #{e.message}"
       false
     end
